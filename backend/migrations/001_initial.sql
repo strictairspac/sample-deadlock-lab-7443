@@ -1,5 +1,13 @@
--- Schema is applied idempotently by SQLAlchemy metadata at startup.
+-- Schema is applied idempotently by SQLAlchemy metadata + src/config/migrate.py at startup.
 -- See src/models/entities.py for authoritative tables, constraints and relationships.
--- Critical locking query (worker only):
--- SELECT remaining FROM trial_balances WHERE trial_id = :id FOR UPDATE;
--- SET LOCAL lock_timeout = '250ms';
+-- Critical locking queries (worker only):
+--   单样本 single：
+--     SELECT remaining FROM trial_balances WHERE trial_id = :id AND sample_id = :sid FOR UPDATE;
+--     SET LOCAL lock_timeout = '250ms';
+--   双样本交叉 cross：
+--     SET LOCAL deadlock_timeout = '200ms';  -- 先于 lock_timeout，保留数据库选出的 40P01 牺牲者
+--     SELECT ... FOR UPDATE（先自身镜像行，再对方镜像行，构成真实死锁环）
+-- 002 演进（migrate.py 自动完成，无需手工执行）：
+--   trials 增加 kind/second_transfer_id/run_token/worker_id/locked_until/attempts；
+--   trial_balances 主键改为 (trial_id, sample_id) 以支持双样本两行镜像账；
+--   新增 trial_attempts 阶段账本（deadlock/retry），支撑中断按阶段恢复。

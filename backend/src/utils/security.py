@@ -2,7 +2,6 @@ import hashlib,hmac,os,jwt
 from datetime import datetime,timedelta,timezone
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer
-from sqlalchemy import select
 from src.config.settings import JWT_SECRET
 from src.config.database import db_session
 from src.models.entities import User
